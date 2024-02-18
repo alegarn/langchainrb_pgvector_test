@@ -25,6 +25,20 @@ Before starting with the installation process, make sure you have the following 
 
 If you encounter any issues with superuser permissions, follow the steps mentioned in the [Server Fault post](https://serverfault.com/questions/110154/whats-the-default-superuser-username-password-for-postgres-after-a-new-install) to add a superuser.
 
+
+What you should do is follow Chris James's answer:
+
+Open a new terminal:
+```
+sudo -u postgres psql postgres
+
+# type "\password" then postgres
+
+Enter new password: 
+
+# type "ALTER ROLE postgres SUPERUSER;"
+```
+
 Make sure you also have your API key for OpenAI ready before proceeding with the installation.
 Visit https://platform.openai.com/api-keys and copy your newly created key.
 
@@ -45,7 +59,16 @@ To launch the project, follow these steps:
    OPENAI_API_KEY=your_api_key_here
    ```
 
-3. Run the following command to start the project:
+3. Set your POSTGRES_USER and POSTGRES_PASSWORD in the `.env` file:
+
+   "postgres" for both by default (see the Superuser part in "Pre-installation Requirements")
+   
+   ```
+   POSTGRES_USER=postgres
+   POSTGRES_PASSWORD=postgres
+   ```
+
+4. Run the following command to start the project:
    ```
    $ ruby index.rb
    ```
