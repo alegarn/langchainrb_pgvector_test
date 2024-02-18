@@ -141,11 +141,3 @@ class VectorDb
   end
 
 end
-
-#pgvector.create_default_schema
-
-
-#my_pdf = Langchain.root.join("/home/a/Documents/Projets/Langchain/langchainrb_pgvector_test/Files/Garnier_Alex_CV_Hôte.pdf")
-#puts "PDF", my_pdf
-
-#pgvector.add_data(paths: [my_pdf])

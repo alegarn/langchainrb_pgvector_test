@@ -12,7 +12,6 @@ class Interface
       @pgvector = pgvector
       @thread = thread
       @assistant = start_assistant()
-      # vdb
       launch_interface()
   end
 
@@ -40,7 +39,6 @@ class Interface
       puts "********************************************************"
       case choice
         when "1"
-          # embeddings
           @pgvector.add_data()
         when "2"
           query_loop()
