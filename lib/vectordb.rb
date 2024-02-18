@@ -47,8 +47,8 @@ class VectorDb
   end
 
   def db_url_from_credentials
-    username = "postgres"
-    password = "postgres"
+    username = ENV["POSTGRES_USER"]
+    password = ENV["POSTGRES_PASSWORD"]
     return url = "postgres://#{username}:#{password}@localhost:5432/#{@db_name}_vector"
   end
 
