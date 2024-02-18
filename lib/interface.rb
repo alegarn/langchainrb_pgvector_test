@@ -1,7 +1,6 @@
 require 'bundler/setup'
 Bundler.require(:default)
-require 'dotenv'
-Dotenv.load
+
 require 'model'
 require 'vectordb'
 
