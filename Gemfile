@@ -6,5 +6,5 @@ gem "pg", "~> 1.5.5"
 gem "pgvector", "~> 0.2.2"
 
 gem 'ruby-openai', "~> 6.3.1"
-gem 'dotenv', groups: [:development, :test], "~> 3.0.2"
+gem 'dotenv', '~> 3.0.2'
 gem "pdf-reader", "~> 2.12.0"

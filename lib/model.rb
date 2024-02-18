@@ -1,6 +1,5 @@
 require 'bundler/setup'
 Bundler.require(:default)
-require 'dotenv'
 Dotenv.load
 
 class LlmModel
