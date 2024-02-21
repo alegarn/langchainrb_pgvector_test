@@ -8,3 +8,8 @@ gem "pgvector", "~> 0.2.2"
 gem 'ruby-openai', "~> 6.3.1"
 gem 'dotenv', '~> 3.0.2'
 gem "pdf-reader", "~> 2.12.0"
+
+gem 'pry'
+gem 'nokogiri'
+gem 'spidr'
+gem 'httparty'
