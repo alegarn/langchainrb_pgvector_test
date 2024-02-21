@@ -3,6 +3,9 @@ Bundler.require(:default)
 require 'dotenv'
 Dotenv.load
 
+require 'interface'
+
+
 class VectorDb
   attr_accessor :pgvector, :db_name, :k
   def initialize(llm:)
@@ -85,10 +88,58 @@ class VectorDb
     end
   end
 
+
+  def add_sections
+    puts "Add sections of a pdf file, per chunk in the database"
+    puts "Enter your pdf file path: "
+    path = gets.chomp
+    begin 
+      pdf_text = PDF::Reader
+            .new(StringIO.new(File.read(path)))
+            .pages
+            .map(&:text)
+            .join("\n\n");
+
+      file_name = path.split("/").last
+
+      # all file infos: id, date, title, sections
+      includes_title = "File name: " + file_name + "\n\n" + pdf_text;
+      puts "Text: #{includes_title}"
+      # get text size: file infos 
+      # add paragraphe
+      # size
+      # update chunk size
+      puts "prompt:"
+
+      user_input = gets.chomp
+
+      prompt = "Context: \n
+            #{includes_title}\n
+            Query: \n
+            #{user_input}\n
+            Answer: " 
+
+
+      (Interface.get_assistant()).add_message(content: (includes_title), role: "user")
+      (Interface.get_assistant()).run
+
+      puts "Assistant's Response: #{@assistant.thread.messages.last.content}"
+
+
+      return includes_title
+    rescue => e
+      puts "Error: #{e}"
+      return nil
+    end
+    
+    
+  end
+
   # Add data to the database, paths is an array of strings
   def add_data
     system "clear"
-    puts "Adding data to the database"
+    puts "Adding data to the database from a file (pdf, json, csv)"
+    puts "1 to add sections of a pdf file"
     puts "Paths is an array of strings: \n
     e.g. ['/path/to/file1.pdf'] just 1 path\n
     e.g. ['/path/to/file1.pdf', '/path/to/file2.pdf'] 2 paths\n
@@ -103,7 +154,8 @@ class VectorDb
       input = gets.chomp
       
       break if input.downcase == 'done'
-      
+      add_sections() if input == "1"
+
       paths << Langchain.root.join(input)
     end
     puts "Paths: #{paths}"
