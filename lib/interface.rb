@@ -3,6 +3,7 @@ Bundler.require(:default)
 
 require 'model'
 require 'vectordb'
+require 'scraper'
 
 class Interface
   
@@ -12,6 +13,18 @@ class Interface
       @thread = thread
       @assistant = start_assistant()
       launch_interface()
+  end
+
+  def get_llm
+    return @llm
+  end
+
+  def get_thread
+    return @thread
+  end
+
+  def get_assistant
+   return @assistant
   end
 
   def start_assistant
@@ -33,6 +46,7 @@ class Interface
       dimension: #{@llm.get_dimensions}"
       puts "4 - Exit"
       puts "5 - Delete database"
+      puts "6 - Scraper"
       puts "Enter your choice: \n"
       choice = gets.chomp
       puts "********************************************************"
@@ -54,6 +68,8 @@ class Interface
           exit
         when "5"
           @pgvector.delete_db
+        when "6"
+          Scraper.new()
         else
           puts "Invalid choice. Please try again."
           launch_interface
