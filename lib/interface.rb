@@ -72,7 +72,7 @@ class Interface
           Scraper.new()
         else
           puts "Invalid choice. Please try again."
-          launch_interface
+          launch_interface()
       end
     end
   end

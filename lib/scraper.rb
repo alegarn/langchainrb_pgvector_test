@@ -5,6 +5,55 @@ Bundler.require(:default)
 class Scraper
   include HTTParty
   include Nokogiri
+
+  # general scraper
+
+  # save doc scraper
+    # send the text + link
+    # follow ? 
+      
+
+  # headless scroll
+    # spidr ?
+      # https://github.com/postmodern/spidr
+    # How to scroll to an element in Ruby and Selenium
+      # https://stackoverflow.com/questions/55403469/how-to-scroll-to-an-element-in-ruby-and-selenium
+    # selenium scroll element into (center of) view
+      # https://stackoverflow.com/questions/20167544/selenium-scroll-element-into-center-of-view
+    
+  # heavy js (has all content)?
+    # no -> next
+    # yes -> activate some trigger
+    
+  # page_text_all = mouse "select all"
+    # retrieve html tags + css
+    # write summary
+    # markdown
+
+  # Scrape only visible elements with Nokogiri
+    # https://stackoverflow.com/questions/31428731/scrape-only-visible-elements-with-nokogiri
+  # Scrape all visible text from a web page
+    # https://stackoverflow.com/questions/26779088/scrape-all-visible-text-from-a-web-page
+  
+  # https://brightdata.com/blog/how-tos/web-scraping-with-ruby
+      # Web Scraping with Ruby: Complete Guide
+    
+  # summary structure
+    # all tags
+    # all text 
+    # https://github.com/rgrove/sanitize
+    # It removes all HTML and/or CSS from a string except the elements, attributes, and properties you choose to allow.
+    # if not
+      # with css
+
+  #      
+
+  #medium
+  # enter in db
+  # with part infos
+  # a special id (domain / title / author / ...)
+
+
   def initialize
     @scraper = nil
     @text_treatment = nil
@@ -34,7 +83,7 @@ class Scraper
     end
   end
 
-  def visit_medium_article(link)
+  def visit_medium_article(link, response)
     puts "visit_medium_article"
 
     html = Nokogiri::HTML(response.body)
@@ -89,6 +138,7 @@ class Scraper
     
     # markdown
     markdown_text = ""
+    summary = ""
     content << [{ type: "H1", text: title }]
     content << [{ type: "H2", text: sub_title }]
 
@@ -96,24 +146,32 @@ class Scraper
       type = element[0][:type]
       text = element[0][:text]
 
+      # build a markdown article from the content
       case type
       when "H1"
         markdown_text << "# #{text}\n\n"
+        summary << "# #{text}\n\n"
       when "H2"
         markdown_text << "## #{text}\n\n"
+        summary << "## #{text}\n\n"
       when "H3"
         markdown_text << "### #{text}\n\n"
+        summary << "### #{text}\n\n"
       when "H4"
         markdown_text << "#### #{text}\n\n"
+        summary << "#### #{text}\n\n"
       when "IMG"
         markdown_text << "![#{text}](image_url_here)\n\n"
       when "P"
         markdown_text << "#{text}\n\n"
+      when "BG"
+        markdown_text << "> #{text}\n\n"
       end
+
     end
 
     puts markdown_text
-    
+    puts summary
     
 
 
@@ -128,7 +186,7 @@ class Scraper
     response = HTTParty.get(link_without_spaces)
 
     is_medium = link.include?("medium.com")
-    visit_medium_article(link) if is_medium
+    visit_medium_article(link, response) if is_medium
 
     puts "response, #{response.class}"
     
