@@ -83,33 +83,39 @@ class Scraper
     end
   end
 
+
+  def scroll_down(driver)
+    prev_height = -1
+    max_scrolls = 100
+    scroll_count = 0
+
+    while scroll_count < max_scrolls
+      driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
+      driver.manage.timeouts.implicit_wait = 500
+      new_height = driver.execute_script("return document.body.scrollHeight")
+      break if new_height == prev_height      
+      prev_height = new_height
+      scroll_count += 1
+    end
+
+  end
+
+  # 
   def visit_article(link)
     puts "visit_article"
     driver = Selenium::WebDriver.for :chrome
     driver.get(link)
-    driver.manage.timeouts.implicit_wait = 500 #[250..500]
+    driver.manage.timeouts.implicit_wait = 250 #[250..500]
 
 
-    binding.pry
-    #html fetch detection
+    #html fetch detection (futur)
       # scroll down, wait / select footer, wait
       # if none scroll down last child
-
-
-    # footer
-    footer = driver.find_elements(tag_name: 'footer')
-    #wait x seconds
-      # footer = nil ? find class footer / id footer / body last child, little wait, try again 
-      # footer = driver.find_elements(tag_name: 'body').child.last ? scroll down
-
     
-    # if none scroll down
-    driver.action
-          .scroll_to(footer)
-          .perform
-
-    driver.manage.timeouts.implicit_wait = 500
-
+    scroll_down(driver)
+    
+    body_html = driver.find_element(tag_name: "body").attribute("innerHTML")
+  
     # save the text with everithing in order (human visible text only)       
     full_text = driver.find_element(tag_name: "body").text
     
@@ -123,10 +129,282 @@ class Scraper
     
     # get the titles/texts human visible order with full_text
       # from full_text build a new array containing all lines with like: ["line1", "line2", "line3", ..., "lineN"]
+
+      def extract_text_lines(full_text)
+        lines = full_text.split("\n")
+      end
+    lines = extract_text_lines(full_text)
     # create a html tree with only the tags containing one line of texts in full_text
       # <html_tag>line1</html_tag> : add in the tree
       # what is the hierarchy of the titles: ["h1", "h2", "h3", "h4", "h5", "h6", "strong"]
       # page_tree = {"title" => {"tag" => "h1", "text" => "line1", children: {"h2" => "line2", ...} ...}
+    # Define the hierarchy of title tags
+    hierarchy = ["h1", "h2", "h3", "h4", "h5", "h6"]
+
+##################################
+# test!!!
+
+# + only start with h1 
+
+    lines_with_hierarchy = []
+
+    lines.each do |line|
+      hierarchy_tag = ''  # Initialize the hierarchy tag variable
+    
+      html_noko.xpath("//*[text()='#{line}']").each do |element|
+        tag_name = element.name
+        if hierarchy.include?(tag_name)
+          hierarchy_tag = tag_name
+          break
+        end
+      end
+    
+      line_with_hierarchy = hierarchy.include?(hierarchy_tag) ? "#{'#' * (hierarchy.index(hierarchy_tag) + 1)} #{line}" : line
+      lines_with_hierarchy << line_with_hierarchy
+    end
+
+
+
+
+    paragraphs = []
+    current_paragraph = ""
+
+    lines_with_hierarchy.each do |line|
+      if line.start_with?("#")  # New hierarchy tag found
+        paragraphs << current_paragraph unless current_paragraph.empty?
+        current_paragraph = line  # Start a new paragraph
+      else
+        current_paragraph += "\n#{line}"  # Add line to current paragraph
+      end
+    end
+
+    paragraphs << current_paragraph unless current_paragraph.empty?  # Add the last paragraph
+
+    paragraphs.each_with_index do |paragraph, index|
+      puts "Paragraph #{index + 1}:"
+      puts paragraph
+      puts "\n"
+    end
+
+# + find conclusion
+# + return a hierarchy tree with the hierarchy of the titles
+# + return the hierarchy of the paragraphes
+
+
+# just summary
+  # it has the conclusion of the article
+    # extract xpath from conclusion as endpoint?
+  # 
+# Initialize an array to store the summary
+summary = []
+
+# Iterate over each heading tag in the HTML content
+hierarchy.each do |tag|
+  html_noko.css(tag).each do |element|
+    line = element.text.strip  # Extract the text content of the heading tag
+    summary << "#{'#' * (hierarchy.index(tag) + 1)} #{line}"  # Format the heading tag in Markdown style and add it to the summary
+  end
+end
+
+# Output the summary
+summary.each do |heading|
+  puts heading
+end
+
+
+###
+# Initialize a hash to store the hierarchy tree
+hierarchy_tree = {}
+
+# Iterate over each heading tag in the HTML content
+hierarchy.each do |tag|
+  html_noko.css(tag).each do |element|
+    line = element.text.strip  # Extract the text content of the heading tag
+    # Format the heading tag in Markdown style
+    formatted_heading = "#{'#' * (hierarchy.index(tag) + 1)} #{line}"
+    
+    # Find the parent heading tag in the hierarchy
+    parent_tag_index = hierarchy.index(tag) - 1
+    parent_tag = hierarchy[parent_tag_index] if parent_tag_index >= 0
+    
+    if parent_tag
+      # Check if the parent entry exists in the hierarchy tree
+      if hierarchy_tree[parent_tag].nil?
+        hierarchy_tree[parent_tag] = [formatted_heading]
+      else
+        hierarchy_tree[parent_tag] << formatted_heading
+      end
+    else
+      hierarchy_tree[tag] = [formatted_heading]
+    end
+  end
+end
+
+# Output the hierarchical tree
+def display_hierarchy_tree(tree, level = 0)
+  tree.each do |key, value|
+    puts "#{'#' * level} #{key}"
+    value.each do |heading|
+      puts "#{spacing(level)}- #{heading}"
+    end
+    display_hierarchy_tree(tree[key], level + 1) if tree[key].is_a?(Hash)
+  end
+end
+
+def spacing(level)
+  '  ' * level
+end
+
+# Display the hierarchical tree
+display_hierarchy_tree(hierarchy_tree)
+
+
+### summary until conclusion
+summary = []
+conclusion_found = false
+
+# Iterate over each heading tag in the HTML content
+hierarchy.each do |tag|
+  html_noko.css(tag).each do |element|
+    line = element.text.strip  # Extract the text content of the heading tag
+    summary << { tag: tag, text: line }  # Store the tag and text in the summary
+
+    # Check if the conclusion is found
+    if line.downcase.include?('conclusion')
+      conclusion_found = true
+      break
+    end
+  end
+
+  break if conclusion_found  # Break out of the loop if conclusion is found
+end
+
+# Output the summary
+summary.each do |heading|
+  puts "#{heading[:tag]}: #{heading[:text]}"
+end
+
+
+    ###########################################################
+
+
+
+
+
+
+
+
+      def build_html_tree(full_text, hierarchy)
+        tree = {}
+        hierarchy.each do |tag|
+          lines = full_text.split("\n").select { |line| line.start_with?("<#{tag}>") }
+          lines.each do |line|
+
+            tag_name = line.scan(/<(\w+)>/).flatten.first
+            text = line.scan
+            text = line.gsub(/<\w+>(.*?)<\/\w+>/, "\\1")
+            parent_tag = line.scan(/<(\w+)>/).flatten.first
+            parent_text = line.scan(/<\w+>(.*?)<\/\w+>/).flatten.first
+            tree[parent_text] ||= { tag: parent_tag, text: text, children: {} }
+          end
+        end
+        tree
+      end
+
+
+      def build_title_hierarchy(full_text, hierarchy)
+        title_hierarchy = {}
+        hierarchy.each do |tag|
+          lines = full_text.split("\n").select { |line| line.start_with?("<#{tag}>") }
+          lines.each_with_index do |line, index|
+            parent_title = hierarchy[index - 1] unless index == 0
+            tag_name = line.scan(/<(\w+)>/).flatten.first
+            text = line.gsub(/<\w+>(.*?)<\/\w+>/, "\\1")
+            if parent_title
+              title_hierarchy[parent_title][:children][tag_name] = text
+            else
+              title_hierarchy[tag_name] = { tag: tag, text: text, children: {} }
+            end
+          end
+          title_hierarchy
+        end
+      end
+
+    
+      def build_tree_from_html(full_text, html)
+        page_tree = {}
+      
+        # Extract lines from the full text
+        lines = full_text.split("\n")
+      
+        # Parse the HTML string using Nokogiri
+        parsed_html = Nokogiri::HTML(html)
+      
+        # Iterate over each line in full text
+        lines.each do |line|
+          # Find the corresponding HTML element in the parsed HTML
+          element = parsed_html.at_xpath("//*[contains(text(), '#{line}')]")
+          
+          if element
+            tag = element.name
+            text = element.text
+            parent_tag = element.parent.name
+            parent_text = element.parent.text
+      
+            # Add the element to the page tree
+            if page_tree[parent_text]
+              page_tree[parent_text][:children][tag] = text
+            else
+              page_tree[parent_text] = { tag: parent_tag, text: parent_text, children: { tag => text } }
+            end
+          end
+        end
+      
+        page_tree
+      end
+
+
+      # some debug
+      def build_tree_from_html(full_text, html, hierarchy)
+        page_tree = {}
+      
+        # Extract titles based on the hierarchy
+        titles_hierarchy = build_title_hierarchy(full_text, hierarchy)
+      
+        # Parse the HTML string using Nokogiri
+        parsed_html = Nokogiri::HTML(html)
+      
+        # Iterate over each title in the hierarchy
+        titles_hierarchy.each do |title, data|
+          tag = data[:tag]
+          text = data[:text]
+      
+          # Find the corresponding HTML element for the title
+          element = parsed_html.at_xpath("//*[contains(text(), '#{text}')]")
+          
+          if element
+            parent_title = titles_hierarchy.key(data)  # Get the parent title
+            if parent_title
+              parent_element = parsed_html.at_xpath("//*[contains(text(), '#{parent_title}')]")
+              if parent_element
+                parent_tag = parent_element.name
+                parent_text = parent_element.text
+        
+                # Add the element to the page tree
+                if page_tree[parent_text]
+                  page_tree[parent_text][:children][tag] = text
+                else
+                  page_tree[parent_text] = { tag: parent_tag, text: parent_text, children: { tag => text } }
+                end
+              end
+            end
+          end
+        end
+      
+        page_tree
+      end      
+
+
 
     # Extract titles/texts in human visible order from full_text
     titles_texts = full_text.scan(/<h[1-6]>.*?<\/h[1-6]>/)
@@ -387,3 +665,21 @@ class Scraper
     # 
   end
 end
+
+=begin  
+
+      FINDERS =
+
+      {
+        :class             => 'ClassName',
+        :class_name        => 'ClassName',
+        :css               => 'CssSelector',
+        :id                => 'Id',
+        :link              => 'LinkText',
+        :link_text         => 'LinkText',
+        :name              => 'Name',
+        :partial_link_text => 'PartialLinkText',
+        :tag_name          => 'TagName',
+        :xpath             => 'Xpath',
+      }
+=end
